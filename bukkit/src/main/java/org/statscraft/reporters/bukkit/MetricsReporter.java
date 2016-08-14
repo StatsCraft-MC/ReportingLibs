@@ -220,9 +220,8 @@ public class MetricsReporter {
 
             // Custom data
             List<String> customDataList = new ArrayList<>();
-            for (String key : customData.keySet()) {
-                String value = customData.get(key);
-                customDataList.add(new NJson().put(key, value).toString());
+            for (Map.Entry<String, String> entry : customData.entrySet()) {
+                customDataList.add(new NJson().put(entry.getKey(), entry.getValue()).toString());
             }
 
             json.putArray("customData", customDataList);
