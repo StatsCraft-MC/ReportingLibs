@@ -1,8 +1,10 @@
 package org.statscraft.reporters.bukkit;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
@@ -282,7 +284,26 @@ public class MetricsReporter {
             if (!System.getProperty(PROP_CURR).equals(plugin.getName())) {
                 return;
             }
-            //TODO: everything :P
+            NJson json = new NJson().put("playerCount", Integer.toString(getOnlinePlayers()));
+            try {
+                sendJson(API_SERVER_URL, json.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        private int getOnlinePlayers() {
+            int online = -1;
+            try {
+                online = Bukkit.getOnlinePlayers().size();
+            } catch (NoSuchMethodError ignored) {
+                try {
+                    online = ((Player[]) Bukkit.class.getMethod("getOnlinePlayers").invoke(null)).length;
+                } catch (ReflectiveOperationException e) {
+                    e.printStackTrace();
+                }
+            }
+            return online;
         }
     }
 
