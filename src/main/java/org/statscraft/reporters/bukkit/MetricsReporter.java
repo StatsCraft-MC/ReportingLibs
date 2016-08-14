@@ -91,8 +91,12 @@ public class MetricsReporter {
                 // Schedule the server data sender
                 scheduler.runTaskAsynchronously(plugin, new ServerReportTask());
 
-                // Schedule server ping task
-                scheduler.runTaskTimerAsynchronously(plugin, new UpdateTask(), 0, UPDATE_DELAY);
+                // Schedule plugin update task
+                // TODO: schedule only if there are dynamic graphs data
+                scheduler.runTaskTimerAsynchronously(plugin, new PluginUpdateTask(), 0, UPDATE_DELAY);
+
+                // Schedule server update task
+                scheduler.runTaskTimerAsynchronously(plugin, new ServerUpdateTask(), 0, UPDATE_DELAY);
             }
         });
 
@@ -202,7 +206,14 @@ public class MetricsReporter {
         }
     }
 
-    private class UpdateTask implements Runnable {
+    private class PluginUpdateTask implements Runnable {
+        @Override
+        public void run() {
+            //TODO: everything :P
+        }
+    }
+
+    private class ServerUpdateTask implements Runnable {
         @Override
         public void run() {
             //TODO: everything :P
