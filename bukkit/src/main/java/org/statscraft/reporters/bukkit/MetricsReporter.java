@@ -80,15 +80,15 @@ public class MetricsReporter {
         if (started) {
             throw new IllegalStateException("Can't add custom data when the metrics service is running!");
         }
-        if (customData.size() == MAX_CUSTOMDATA_COUNT) {
+        if (customData.size() > MAX_CUSTOMDATA_COUNT) {
             throw new IllegalStateException("Reached the maximum count of custom data!");
         }
         if (key.length() > MAX_CUSTOMDATA_KEY_LENGTH) {
-            throw new IllegalStateException("The custom data key can't be longer than "
+            throw new IllegalArgumentException("The custom data key can't be longer than "
                 + MAX_CUSTOMDATA_KEY_LENGTH + " characters!");
         }
         if (key.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
-            throw new IllegalStateException("The custom data value can't be longer than "
+            throw new IllegalArgumentException("The custom data value can't be longer than "
                 + MAX_CUSTOMDATA_VALUE_LENGTH + " characters!");
         }
         customData.put(key, value);
