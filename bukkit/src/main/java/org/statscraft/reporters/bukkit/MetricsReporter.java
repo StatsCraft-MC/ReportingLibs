@@ -9,7 +9,9 @@ import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
@@ -23,10 +25,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Metrics reporting service class
@@ -74,6 +73,7 @@ public class MetricsReporter {
     private final String authKey;
     private static boolean started;
     private MetricsConfig config;
+    private final boolean dynamicPluginData;
     private Map<String, String> customData;
 
     /**
@@ -83,6 +83,10 @@ public class MetricsReporter {
      * @param authKey the plugin's authKey
      */
     public MetricsReporter(Plugin plugin, String authKey) {
+        this(plugin, authKey, false);
+    }
+
+    public MetricsReporter(Plugin plugin, String authKey, boolean dynamicPluginData) {
         // Get instances
         this.plugin = plugin;
         this.server = this.plugin.getServer();
@@ -90,6 +94,7 @@ public class MetricsReporter {
         // Set variables
         this.authKey = authKey;
         started = false;
+        this.dynamicPluginData = dynamicPluginData;
         customData = new HashMap<>();
     }
 
@@ -184,6 +189,11 @@ public class MetricsReporter {
 
                 // Schedule server update task
                 scheduler.runTaskTimerAsynchronously(plugin, new ServerUpdateTask(), 0, UPDATE_DELAY);
+
+                if (dynamicPluginData) {
+                    // Schedule plugin update task
+                    scheduler.runTaskTimerAsynchronously(plugin, new PluginUpdateTask(), 0, UPDATE_DELAY);
+                }
             }
         });
 
@@ -269,7 +279,7 @@ public class MetricsReporter {
                 .putArray("softDepend", softDepend)
                 .putMap("customData", customData);
 
-            //clear memory
+            //make ready for next cycle or just free memory if dynamic plugin data is disabled
             customData.clear();
 
             // Send the data
@@ -378,6 +388,47 @@ public class MetricsReporter {
                 }
             }
             return online;
+        }
+    }
+
+    private class PluginUpdateTask implements Runnable {
+        @Override
+        public void run() {
+            //Call event
+            Bukkit.getPluginManager().callEvent(new MetricsReportEvent(customData));
+
+            // Custom data
+            List<String> customDataList = new ArrayList<>();
+            for (Map.Entry<String, String> entry : customData.entrySet()) {
+                customDataList.add(new NJson().put(entry.getKey(), entry.getValue()).toString());
+            }
+            //make ready for next cycle or just free memory ifdynamic plugin data is disabled
+            customData.clear();
+
+            //TODO send the data
+        }
+    }
+
+    public static class MetricsReportEvent extends Event {
+        private final Map<String, String> data;
+
+        private static HandlerList handlerList = new HandlerList();
+
+        public MetricsReportEvent(Map<String, String> data) {
+            this.data = data;
+        }
+
+        public Map<String, String> getData() {
+            return data;
+        }
+
+        @Override
+        public HandlerList getHandlers() {
+            return handlerList;
+        }
+
+        public static HandlerList getHandlerList() {
+            return handlerList;
         }
     }
 
