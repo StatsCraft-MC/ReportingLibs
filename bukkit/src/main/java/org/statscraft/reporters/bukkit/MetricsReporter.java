@@ -282,6 +282,9 @@ public class MetricsReporter {
                 .put("pluginsCount", Integer.toString(pluginsCount))
                 .put("defaultGamemode", defaultGamemode);
 
+            //clear memory
+            customData.clear();
+
             // Send the data
             try {
                 sendJson(API_SERVER_URL, json.toString());
