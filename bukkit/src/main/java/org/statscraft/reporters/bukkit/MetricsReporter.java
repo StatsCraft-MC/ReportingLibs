@@ -58,7 +58,7 @@ public class MetricsReporter {
     private MetricsConfig config;
 
     // Status
-    private boolean started;
+    private static boolean started;
 
     // Custom data
     private Map<String, String> customData;
