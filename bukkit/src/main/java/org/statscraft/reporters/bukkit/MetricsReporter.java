@@ -87,11 +87,12 @@ public class MetricsReporter {
             throw new IllegalArgumentException("The custom data key can't be longer than "
                 + MAX_CUSTOMDATA_KEY_LENGTH + " characters!");
         }
-        if (key.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
+        String valueStr = String.valueOf(value);
+        if (valueStr.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
             throw new IllegalArgumentException("The custom data value can't be longer than "
                 + MAX_CUSTOMDATA_VALUE_LENGTH + " characters!");
         }
-        customData.put(key, String.valueOf(value));
+        customData.put(key, valueStr);
         return this;
     }
 
