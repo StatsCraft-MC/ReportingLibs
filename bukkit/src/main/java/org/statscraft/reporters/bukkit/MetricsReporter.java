@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.google.common.collect.ImmutableMap;
-
 /**
  * Metrics reporting service class
  * www.statscraft.org
@@ -122,30 +120,6 @@ public class MetricsReporter {
         }
         customData.put(key, valueStr);
         return this;
-    }
-
-    /**
-     * Get previously set custom data by key
-     * @param key the key
-     * @return the value set for the given key or {@code null} if there was no value set
-     */
-    public String getCustomData(String key) {
-        return customData.get(key);
-    }
-
-    /**
-     * Removes a key-value pair of custom data
-     * @param key the key of the pair whcih should be removed
-     */
-    public void removeCustomData(String key) {
-        customData.remove(key);
-    }
-
-    /**
-     * @return an immutable map of all custom data 
-     */
-    public Map<String, String> getCustomData() {
-        return ImmutableMap.copyOf(customData);
     }
 
     /**
