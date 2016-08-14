@@ -259,7 +259,7 @@ public class MetricsReporter {
             // Runtime data
             Runtime runtime = Runtime.getRuntime();
             int coreCount = runtime.availableProcessors();
-            long availableRam = runtime.totalMemory();
+            long maxJvmRam = runtime.maxMemory();
 
             // Server instance data
             String serverVersion = server.getBukkitVersion();
@@ -278,7 +278,7 @@ public class MetricsReporter {
                 .put("javaVendor", javaVendor)
                 .put("javaVersion", javaVersion)
                 .put("coreCount", Integer.toString(coreCount))
-                .put("availableRam", Long.toString(availableRam))
+                .put("maxJvmRam", Long.toString(maxJvmRam))
                 .put("serverVersion", serverVersion)
                 .put("minecraftVersion", minecraftVersion)
                 .put("onlineMode", Boolean.toString(onlineMode))
@@ -333,13 +333,13 @@ public class MetricsReporter {
         private final File configFile;
         private FileConfiguration config;
 
-        public MetricsConfig() {
+        private MetricsConfig() {
             File pluginFolder = plugin.getDataFolder().getParentFile();
             File metricsFolder = new File(pluginFolder, FOLDER_NAME);
             configFile = new File(metricsFolder, CONFIGFILE_NAME);
         }
 
-        public MetricsConfig load() {
+        private MetricsConfig load() {
             config = YamlConfiguration.loadConfiguration(configFile);
             return validate();
         }
@@ -375,11 +375,11 @@ public class MetricsReporter {
             return this;
         }
 
-        public String getUuid() {
+        private String getUuid() {
             return config.getString("uuid");
         }
 
-        public boolean isOptOut() {
+        private boolean isOptOut() {
             return config.getBoolean("opt-out");
         }
     }
@@ -387,11 +387,11 @@ public class MetricsReporter {
     private class NJson {
         private StringBuilder builder;
 
-        public NJson() {
+        private NJson() {
             builder = new StringBuilder();
         }
 
-        public NJson put(String key, String value) {
+        private NJson put(String key, String value) {
             StringBuilder b = new StringBuilder();
             if (builder.length() > 0) {
                 b.append(",");
@@ -401,11 +401,11 @@ public class MetricsReporter {
             return this;
         }
 
-        public NJson putArray(String key, String... values) {
+        private NJson putArray(String key, String... values) {
             return putArray(key, Arrays.asList(values));
         }
 
-        public NJson putArray(String key, List<String> values) {
+        private NJson putArray(String key, List<String> values) {
             StringBuilder b = new StringBuilder();
             if (builder.length() > 0) {
                 b.append(",");
@@ -415,11 +415,11 @@ public class MetricsReporter {
             return this;
         }
 
-        public String array(String... elements) {
+        private String array(String... elements) {
             return array(Arrays.asList(elements));
         }
 
-        public String array(List<String> elements) {
+        private String array(List<String> elements) {
             StringBuilder b = new StringBuilder();
             for (String e : elements) {
                 if (b.length() > 0) {
