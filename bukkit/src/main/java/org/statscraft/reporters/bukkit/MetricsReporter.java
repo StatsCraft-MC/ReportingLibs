@@ -109,9 +109,15 @@ public class MetricsReporter {
      * @throws IllegalArgumentException if the customdata name or value is invalid
      */
     public MetricsReporter addCustomData(String key, Object value) throws IllegalStateException, IllegalArgumentException {
-        if (started) {
-            throw new IllegalStateException("Can't add custom data when the metrics service is running!");
+        if (started && !dynamicPluginData) {
+            throw new IllegalStateException("Can't add custom data when the metrics service is running and dynamic plugin data is off!");
         }
+        String valueStr = checkCustomData(customData, key, value);
+        customData.put(key, valueStr);
+        return this;
+    }
+
+    private static String checkCustomData(Map<String, String> customData, String key, Object value) {
         if (customData.size() > MAX_CUSTOMDATA_COUNT) {
             throw new IllegalStateException("Reached the maximum count of custom data!");
         }
@@ -124,8 +130,7 @@ public class MetricsReporter {
             throw new IllegalArgumentException("The custom data value can't be longer than "
                 + MAX_CUSTOMDATA_VALUE_LENGTH + " characters!");
         }
-        customData.put(key, valueStr);
-        return this;
+        return valueStr;
     }
 
     /**
@@ -398,13 +403,12 @@ public class MetricsReporter {
             //Call event
             Bukkit.getPluginManager().callEvent(new MetricsReportEvent(customData));
 
-            // Custom data
             NJson json = new NJson()
                 .put("authKey", authKey)
                 .putMap("customData", customData);
             
             
-            //make ready for next cycle or just free memory if dynamic plugin data is disabled
+            //make ready for next cycle and clear memory
             customData.clear();
 
             try {
@@ -424,10 +428,6 @@ public class MetricsReporter {
             this.data = data;
         }
 
-        public Map<String, String> getData() {
-            return data;
-        }
-
         @Override
         public HandlerList getHandlers() {
             return handlerList;
@@ -435,6 +435,36 @@ public class MetricsReporter {
 
         public static HandlerList getHandlerList() {
             return handlerList;
+        }
+
+        public MetricsReportEvent addCustomData(String key, Object value) {
+            String valueStr = checkCustomData(data, key, value);
+            data.put(key, valueStr);
+            return this;
+        }
+
+        /**
+         * Get previously set custom data by key
+         * @param key the key
+         * @return the value set for the given key or {@code null} if there was no value set
+         */
+        public String getCustomData(String key) {
+            return data.get(key);
+        }
+
+        /**
+         * Removes a key-value pair of custom data
+         * @param key the key of the pair which should be removed
+         */
+        public void removeCustomData(String key) {
+            data.remove(key);
+        }
+
+        /**
+         * @return an unmodifyable map of all custom data 
+         */
+        public Map<String, String> getCustomData() {
+            return Collections.unmodifiableMap(data);
         }
     }
 
