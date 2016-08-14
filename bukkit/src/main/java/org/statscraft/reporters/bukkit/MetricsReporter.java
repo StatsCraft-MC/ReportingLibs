@@ -73,19 +73,19 @@ public class MetricsReporter {
     }
 
     public void addCustomData(String key, String value) {
-        if(started) {
+        if (started) {
             throw new IllegalStateException("Can't add custom data when the metrics service is running!");
         }
-        if(customData.size() == MAX_CUSTOMDATA_COUNT) {
+        if (customData.size() == MAX_CUSTOMDATA_COUNT) {
             throw new IllegalStateException("Reached the maximum count of custom data!");
         }
-        if(key.length() > MAX_CUSTOMDATA_KEY_LENGTH) {
+        if (key.length() > MAX_CUSTOMDATA_KEY_LENGTH) {
             throw new IllegalStateException("The custom data key can't be longer than "
-                + MAX_CUSTOMDATA_KEY_LENGTH +" characters!");
+                + MAX_CUSTOMDATA_KEY_LENGTH + " characters!");
         }
-        if(key.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
+        if (key.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
             throw new IllegalStateException("The custom data value can't be longer than "
-                + MAX_CUSTOMDATA_VALUE_LENGTH +" characters!");
+                + MAX_CUSTOMDATA_VALUE_LENGTH + " characters!");
         }
         customData.put(key, value);
     }
@@ -155,9 +155,9 @@ public class MetricsReporter {
         for (Plugin pl : server.getPluginManager().getPlugins()) {
             Integer ver = Integer.getInteger(PROP_RV_PREFIX + pl.getName());
             if (pl.isEnabled() && ver != null && ver > API_VERSION) {
-				return;
-			}
-		}
+                return;
+            }
+        }
         System.setProperty(PROP_CURR, plugin.getName());
     }
 
@@ -220,7 +220,7 @@ public class MetricsReporter {
 
             // Custom data
             List<String> customDataList = new ArrayList<>();
-            for(String key : customData.keySet()) {
+            for (String key : customData.keySet()) {
                 String value = customData.get(key);
                 customDataList.add(new NJson().put(key, value).toString());
             }
@@ -260,7 +260,6 @@ public class MetricsReporter {
             Runtime runtime = Runtime.getRuntime();
             int coreCount = runtime.availableProcessors();
             long availableRam = runtime.totalMemory();
-            long allocatedRam = runtime.maxMemory();
 
             // Server instance data
             String serverVersion = server.getBukkitVersion();
@@ -280,7 +279,6 @@ public class MetricsReporter {
                 .put("javaVersion", javaVersion)
                 .put("coreCount", Integer.toString(coreCount))
                 .put("availableRam", Long.toString(availableRam))
-                .put("allocatedRam", Long.toString(allocatedRam))
                 .put("serverVersion", serverVersion)
                 .put("minecraftVersion", minecraftVersion)
                 .put("onlineMode", Boolean.toString(onlineMode))
