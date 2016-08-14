@@ -76,7 +76,7 @@ public class MetricsReporter {
         customData = new HashMap<>();
     }
 
-    public void addCustomData(String key, String value) {
+    public MetricsReporter addCustomData(String key, Object value) {
         if (started) {
             throw new IllegalStateException("Can't add custom data when the metrics service is running!");
         }
@@ -91,7 +91,16 @@ public class MetricsReporter {
             throw new IllegalArgumentException("The custom data value can't be longer than "
                 + MAX_CUSTOMDATA_VALUE_LENGTH + " characters!");
         }
-        customData.put(key, value);
+        customData.put(key, String.valueOf(value));
+        return this;
+    }
+
+    public String getCustomData(String key) {
+        return customData.get(key);
+    }
+
+    public void removeCustomData(String key) {
+        customData.remove(key);
     }
 
     public boolean start() {
