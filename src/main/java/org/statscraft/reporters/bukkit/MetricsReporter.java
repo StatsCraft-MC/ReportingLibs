@@ -212,9 +212,9 @@ public class MetricsReporter {
             String osVersion = System.getProperty("os.version");
 
             // Jvm data
-            String javaVersion = System.getProperty("java.version");
-            String javaVendor = System.getProperty("java.vendor");
             String javaVmName = System.getProperty("java.vm.name");
+            String javaVendor = System.getProperty("java.vendor");
+            String javaVersion = System.getProperty("java.version");
 
             // Runtime data
             Runtime runtime = Runtime.getRuntime();
@@ -226,14 +226,25 @@ public class MetricsReporter {
             String serverVersion = server.getBukkitVersion();
             String minecraftVersion = server.getVersion();
             int worldsCount = server.getWorlds().size();
-            int pluginCount = server.getPluginManager().getPlugins().length;
+            int pluginsCount = server.getPluginManager().getPlugins().length;
             String defaultGamemode = server.getDefaultGameMode().toString();
 
             NJson json = new NJson()
                 .put("uuid", config.getUuid())
                 .put("osName", osName)
                 .put("osArch", osArch)
-                .put("osVersion", osVersion);
+                .put("osVersion", osVersion)
+                .put("javaVmName", javaVmName)
+                .put("javaVendor", javaVendor)
+                .put("javaVersion", javaVersion)
+                .put("coreCount", Integer.toString(coreCount))
+                .put("availableRam", Long.toString(availableRam))
+                .put("allocatedRam", Long.toString(allocatedRam))
+                .put("serverVersion", serverVersion)
+                .put("minecraftVersion", minecraftVersion)
+                .put("worldsCount", Integer.toString(worldsCount))
+                .put("pluginsCount", Integer.toString(pluginsCount))
+                .put("defaultGamemode", defaultGamemode);
 
             // Send the data
             try {
