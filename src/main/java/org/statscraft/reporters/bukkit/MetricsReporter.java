@@ -3,15 +3,18 @@ package org.statscraft.reporters.bukkit;
 import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.net.URLConnection;
@@ -26,6 +29,10 @@ public class MetricsReporter {
     private static final String API_PLUGIN_URL = API_BASE_URL + "/plugin";
     private static final String API_SERVER_URL = API_BASE_URL + "/server";
     private static final String API_UPDATE_URL = API_BASE_URL + "/update";
+
+    private static final String PROP_PREFIX = "org.statscraft.reporters.bukkit.";
+    private static final String PROP_CURR = PROP_PREFIX + "currentReporter";
+    private static final String PROP_RV_PREFIX = PROP_PREFIX + "reporterversion.";
 
     private static final int UPDATE_DELAY = 10 * 60 * 20; // Ticks
 
@@ -59,12 +66,12 @@ public class MetricsReporter {
 
     public boolean start() {
         // Stop if the metrics service is already running
-        if(started) {
+        if (started) {
             return true;
         }
 
         // Ignore if the plugin is disabled
-        if(!plugin.isEnabled()) {
+        if (!plugin.isEnabled()) {
             return false;
         }
 
@@ -75,6 +82,23 @@ public class MetricsReporter {
         if (config.isOptOut()) {
             return false;
         }
+        System.setProperty(PROP_RV_PREFIX + plugin.getName(), Integer.toString(API_VERSION));
+        server.getPluginManager().registerEvents(new Listener() {
+            @EventHandler
+            public void onPluginDisable(PluginDisableEvent event) {
+                System.clearProperty(PROP_RV_PREFIX + event.getPlugin().getName());
+                if (!System.getProperty(PROP_CURR).equals(event.getPlugin().getName())) {
+                    return;
+                }
+                //go only on if there's no reporter with a newer version
+                for (Plugin pl : server.getPluginManager().getPlugins()) {
+                    if (Integer.getInteger(PROP_RV_PREFIX + pl.getName()) > API_VERSION) {
+                        return;
+                    }
+                }
+                System.setProperty(PROP_CURR, plugin.getName());
+            }
+        }, plugin);
 
         // Send plugin data async
         scheduler.runTaskAsynchronously(plugin, new PluginReportTask());
@@ -84,7 +108,7 @@ public class MetricsReporter {
             @Override
             public void run() {
                 // If the plugin was disabled do nothing
-                if(!plugin.isEnabled()) {
+                if (!plugin.isEnabled()) {
                     return;
                 }
 
@@ -127,10 +151,10 @@ public class MetricsReporter {
         final String response = reader.readLine();
         reader.close();
         // Check response
-        if(response == null) {
+        if (response == null) {
             throw new IOException("Response was null");
         }
-        if(response.startsWith("ERR")) {
+        if (response.startsWith("ERR")) {
             throw new IOException(response);
         }
     }
@@ -138,7 +162,7 @@ public class MetricsReporter {
     private class PluginReportTask implements Runnable {
         @Override
         public void run() {
-            if(!plugin.isEnabled()) {
+            if (!plugin.isEnabled()) {
                 return;
             }
 
@@ -174,7 +198,7 @@ public class MetricsReporter {
     private class ServerReportTask implements Runnable {
         @Override
         public void run() {
-            if(!plugin.isEnabled()) {
+            if (!plugin.isEnabled()) {
                 return;
             }
 
@@ -216,6 +240,9 @@ public class MetricsReporter {
     private class ServerUpdateTask implements Runnable {
         @Override
         public void run() {
+            if (!System.getProperty(PROP_CURR).equals(plugin.getName())) {
+                return;
+            }
             //TODO: everything :P
         }
     }
@@ -251,7 +278,7 @@ public class MetricsReporter {
                 config.set("opt-out", false);
                 changes = true;
             }
-            if(changes) {
+            if (changes) {
                 save();
             }
             return this;
@@ -288,7 +315,7 @@ public class MetricsReporter {
 
         public NJson put(String key, String value) {
             StringBuilder b = new StringBuilder();
-            if(builder.length() > 0) {
+            if (builder.length() > 0) {
                 b.append(",");
             }
             b.append("{\"" + key + "\":\"" + value + "\"}");
@@ -302,7 +329,7 @@ public class MetricsReporter {
 
         public NJson putArray(String key, List<String> values) {
             StringBuilder b = new StringBuilder();
-            if(builder.length() > 0) {
+            if (builder.length() > 0) {
                 b.append(",");
             }
             b.append("{\"" + key + "\":" + array(values));
@@ -316,8 +343,8 @@ public class MetricsReporter {
 
         public String array(List<String> elements) {
             StringBuilder b = new StringBuilder();
-            for(String e : elements) {
-                if(b.length() > 0) {
+            for (String e : elements) {
+                if (b.length() > 0) {
                     b.append(",");
                 }
                 b.append(e);
