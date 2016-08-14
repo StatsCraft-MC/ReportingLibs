@@ -19,7 +19,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class MetricsReporter {
     // Constants
@@ -216,15 +220,8 @@ public class MetricsReporter {
                 .put("website", website)
                 .putArray("authors", authors)
                 .putArray("depend", depend)
-                .putArray("softDepend", softDepend);
-
-            // Custom data
-            List<String> customDataList = new ArrayList<>();
-            for (Map.Entry<String, String> entry : customData.entrySet()) {
-                customDataList.add(new NJson().put(entry.getKey(), entry.getValue()).toString());
-            }
-
-            json.putArray("customData", customDataList);
+                .putArray("softDepend", softDepend)
+                .putMap("customData", customData);
 
             // Send the data
             try {
@@ -383,7 +380,7 @@ public class MetricsReporter {
         }
     }
 
-    private class NJson {
+    private static class NJson {
         private StringBuilder builder;
 
         private NJson() {
@@ -391,27 +388,47 @@ public class MetricsReporter {
         }
 
         private NJson put(String key, String value) {
-            StringBuilder b = new StringBuilder();
-            if (builder.length() > 0) {
-                b.append(",");
-            }
-            b.append("{\"" + key + "\":\"" + value + "\"}");
-            builder.append(b.toString());
+            builder.append(putOuterMapping(prepare(key), "\"" + prepare(value) + "\"").toString());
             return this;
-        }
-
-        private NJson putArray(String key, String... values) {
-            return putArray(key, Arrays.asList(values));
         }
 
         private NJson putArray(String key, List<String> values) {
+            String array = array(values);
+            builder.append(putOuterMapping(prepare(key), array).toString());
+            return this;
+        }
+
+        private NJson putMap(String key, Map<String, String> values) {
+            String map = map(values);
+            StringBuilder b = putOuterMapping(prepare(key), map);
+            builder.append(b.toString());
+            return this;
+        }
+
+        @Override
+        public String toString() {
+            return "{" + builder.toString() + "}";
+        }
+
+        //internal functions
+        private String map(Map<String, String> values) {
+            StringBuilder b = new StringBuilder();
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                if (b.length() > 0) {
+                    b.append(",");
+                }
+                b.append("\"").append(prepare(entry.getKey())).append("\":\"").append(prepare(entry.getValue())).append("\"");
+            }
+            return "{" + b.toString() + "}";
+        }
+
+        private StringBuilder putOuterMapping(String key, String value) {
             StringBuilder b = new StringBuilder();
             if (builder.length() > 0) {
                 b.append(",");
             }
-            b.append("{\"" + key + "\":" + array(values));
-            builder.append(b.toString());
-            return this;
+            b.append("\"").append(key).append("\":").append(value);
+            return b;
         }
 
         private String array(String... elements) {
@@ -424,13 +441,13 @@ public class MetricsReporter {
                 if (b.length() > 0) {
                     b.append(",");
                 }
-                b.append(e);
+                b.append("\"" + prepare(e) + "\"");
             }
             return "[" + b.toString() + "]";
         }
 
-        public String toString() {
-            return "{" + builder.toString() + "}";
+        private String prepare(String input) {
+            return input.replace("\\", "\\\\").replace("\"", "\\\"");
         }
     }
 }
