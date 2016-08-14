@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2016 StatsCraft Authors and Contributors.
+ */
+
 package org.statscraft.reporters.bukkit;
 
 import org.bukkit.Bukkit;
@@ -25,58 +29,81 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Metrics reporting service class
+ * www.statscraft.org
+ */
 public class MetricsReporter {
-    // Constants
+    /*
+     * Constants
+     */
+
+    // Api
     private static final int API_VERSION = 1;
     private static final String API_BASE_URL = "http://api.statscraft.org/v" + API_VERSION + "/report";
     private static final String API_PLUGIN_URL = API_BASE_URL + "/plugin";
     private static final String API_SERVER_URL = API_BASE_URL + "/server";
     private static final String API_UPDATE_URL = API_BASE_URL + "/update";
 
+    // System properties
     private static final String PROP_PREFIX = "org.statscraft.reporters.bukkit.";
     private static final String PROP_CURR = PROP_PREFIX + "currentReporter";
     private static final String PROP_RV_PREFIX = PROP_PREFIX + "reporterversion.";
 
+    // Custom data limits
     private static final int MAX_CUSTOMDATA_COUNT = 15;
     private static final int MAX_CUSTOMDATA_KEY_LENGTH = 30;
     private static final int MAX_CUSTOMDATA_VALUE_LENGTH = 100;
 
-    private static final int UPDATE_DELAY = 10 * 60 * 20; // Ticks
+    // Update task interval, in ticks
+    private static final int UPDATE_DELAY = 10 * 60 * 20;
 
+    // Config path
     private static final String FOLDER_NAME = "StatsCraft";
-    private static final String CONFIGFILE_NAME = "config.yml";
+    private static final String CONFIG_FILENAME = "config.yml";
 
-    // Instances
+    /*
+     * Instances
+     */
     private final Server server;
     private final BukkitScheduler scheduler;
     private final Plugin plugin;
 
-    // Key
+    /*
+     * Variables
+     */
     private final String authKey;
-
-    // Config
-    private MetricsConfig config;
-
-    // Status
     private static boolean started;
-
-    // Custom data
+    private MetricsConfig config;
     private Map<String, String> customData;
 
+    /**
+     * Constructor of the service
+     *
+     * @param plugin the plugin instance
+     * @param authKey the plugin's authKey
+     */
     public MetricsReporter(Plugin plugin, String authKey) {
         // Get instances
         this.plugin = plugin;
         this.server = this.plugin.getServer();
         this.scheduler = this.server.getScheduler();
-        // Key
+        // Set variables
         this.authKey = authKey;
-        // Reset status
         started = false;
-        // Custom data
         customData = new HashMap<>();
     }
 
-    public void addCustomData(String key, String value) {
+    /**
+     * Method that adds custom data to send with the plugin metrics
+     *
+     * @param key the name of the custom data
+     * @param value the value of the custom data
+     *
+     * @throws IllegalStateException if the plugin has reached the maximum amount of customdata entries
+     * @throws IllegalArgumentException if the customdata name or value is invalid
+     */
+    public void addCustomData(String key, String value) throws IllegalStateException, IllegalArgumentException {
         if (started) {
             throw new IllegalStateException("Can't add custom data when the metrics service is running!");
         }
@@ -84,18 +111,23 @@ public class MetricsReporter {
             throw new IllegalStateException("Reached the maximum count of custom data!");
         }
         if (key.length() > MAX_CUSTOMDATA_KEY_LENGTH) {
-            throw new IllegalStateException("The custom data key can't be longer than "
+            throw new IllegalArgumentException("The custom data key can't be longer than "
                 + MAX_CUSTOMDATA_KEY_LENGTH + " characters!");
         }
         if (key.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
-            throw new IllegalStateException("The custom data value can't be longer than "
+            throw new IllegalArgumentException("The custom data value can't be longer than "
                 + MAX_CUSTOMDATA_VALUE_LENGTH + " characters!");
         }
         customData.put(key, value);
     }
 
+    /**
+     * Method that starts the metrics service
+     *
+     * @return true if the service started successfully
+     */
     public boolean start() {
-        // Stop if the metrics service is already running
+        // Stop if the metrics service its already running
         if (started) {
             return true;
         }
@@ -113,7 +145,9 @@ public class MetricsReporter {
             return false;
         }
 
+        // Prepare the system property to elect the main service
         System.setProperty(PROP_RV_PREFIX + plugin.getName(), Integer.toString(API_VERSION));
+        // Register an event to update the main service
         server.getPluginManager().registerEvents(new Listener() {
             @EventHandler
             public void onPluginDisable(PluginDisableEvent event) {
@@ -138,9 +172,11 @@ public class MetricsReporter {
                 if (!plugin.isEnabled()) {
                     return;
                 }
+
+                // Look for the main daemon
                 checkNewerVersionOrElectMe();
 
-                // Schedule the server data sender
+                // If this is the main daemon, schedule the server data sender
                 if (System.getProperty(PROP_CURR).equals(plugin.getName())) {
                     scheduler.runTaskAsynchronously(plugin, new ServerReportTask());
                 }
@@ -150,7 +186,7 @@ public class MetricsReporter {
             }
         });
 
-        // Everything ok
+        // Everything ok, mark the service as started
         started = true;
         return true;
     }
@@ -332,7 +368,7 @@ public class MetricsReporter {
         private MetricsConfig() {
             File pluginFolder = plugin.getDataFolder().getParentFile();
             File metricsFolder = new File(pluginFolder, FOLDER_NAME);
-            configFile = new File(metricsFolder, CONFIGFILE_NAME);
+            configFile = new File(metricsFolder, CONFIG_FILENAME);
         }
 
         private MetricsConfig load() {
