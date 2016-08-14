@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
@@ -88,16 +87,12 @@ public class MetricsReporter {
             @EventHandler
             public void onPluginDisable(PluginDisableEvent event) {
                 System.clearProperty(PROP_RV_PREFIX + event.getPlugin().getName());
-                if (!System.getProperty(PROP_CURR).equals(event.getPlugin().getName())) {
+                String curr = System.getProperty(PROP_CURR);
+                if (!curr.equals(event.getPlugin().getName())) {
                     return;
                 }
-                //go only on if there's no reporter with a newer version
-                for (Plugin pl : server.getPluginManager().getPlugins()) {
-                    if (Integer.getInteger(PROP_RV_PREFIX + pl.getName()) > API_VERSION) {
-                        return;
-                    }
-                }
-                System.setProperty(PROP_CURR, plugin.getName());
+                System.setProperty(PROP_CURR, "");
+                checkNewerVersionOrElectMe();
             }
         }, plugin);
 
@@ -112,9 +107,12 @@ public class MetricsReporter {
                 if (!plugin.isEnabled()) {
                     return;
                 }
+                checkNewerVersionOrElectMe();
 
                 // Schedule the server data sender
-                scheduler.runTaskAsynchronously(plugin, new ServerReportTask());
+                if (System.getProperty(PROP_CURR).equals(plugin.getName())) {
+                    scheduler.runTaskAsynchronously(plugin, new ServerReportTask());
+                }
 
                 // Schedule plugin update task
                 // TODO: schedule only if there are dynamic graphs data
@@ -128,6 +126,16 @@ public class MetricsReporter {
         // Everything ok
         started = true;
         return true;
+    }
+
+    private void checkNewerVersionOrElectMe() {//go only on if there's no reporter with a newer version
+        for (Plugin pl : server.getPluginManager().getPlugins()) {
+            Integer ver = Integer.getInteger(PROP_RV_PREFIX + pl.getName());
+            if (pl.isEnabled() && ver != null && ver > API_VERSION) {
+				return;
+			}
+		}
+        System.setProperty(PROP_CURR, plugin.getName());
     }
 
     private void sendJson(String url, String json) throws IOException {
