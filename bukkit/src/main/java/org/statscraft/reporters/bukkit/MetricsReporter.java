@@ -269,6 +269,9 @@ public class MetricsReporter {
                 .putArray("softDepend", softDepend)
                 .putMap("customData", customData);
 
+            //clear memory
+            customData.clear();
+
             // Send the data
             try {
                 sendJson(API_PLUGIN_URL, json.toString());
@@ -330,9 +333,6 @@ public class MetricsReporter {
                 .put("worldsCount", Integer.toString(worldsCount))
                 .put("pluginsCount", Integer.toString(pluginsCount))
                 .put("defaultGamemode", defaultGamemode);
-
-            //clear memory
-            customData.clear();
 
             // Send the data
             try {
