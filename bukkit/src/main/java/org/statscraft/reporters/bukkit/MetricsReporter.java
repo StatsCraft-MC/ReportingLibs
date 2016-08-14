@@ -19,9 +19,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class MetricsReporter {
     // Constants
@@ -34,6 +32,10 @@ public class MetricsReporter {
     private static final String PROP_PREFIX = "org.statscraft.reporters.bukkit.";
     private static final String PROP_CURR = PROP_PREFIX + "currentReporter";
     private static final String PROP_RV_PREFIX = PROP_PREFIX + "reporterversion.";
+
+    private static final int MAX_CUSTOMDATA_COUNT = 15;
+    private static final int MAX_CUSTOMDATA_KEY_LENGTH = 30;
+    private static final int MAX_CUSTOMDATA_VALUE_LENGTH = 100;
 
     private static final int UPDATE_DELAY = 10 * 60 * 20; // Ticks
 
@@ -54,6 +56,9 @@ public class MetricsReporter {
     // Status
     private boolean started;
 
+    // Custom data
+    private Map<String, String> customData;
+
     public MetricsReporter(Plugin plugin, String authKey) {
         // Get instances
         this.plugin = plugin;
@@ -63,6 +68,26 @@ public class MetricsReporter {
         this.authKey = authKey;
         // Reset status
         started = false;
+        // Custom data
+        customData = new HashMap<>();
+    }
+
+    public void addCustomData(String key, String value) {
+        if(started) {
+            throw new IllegalStateException("Can't add custom data when the metrics service is running!");
+        }
+        if(customData.size() == MAX_CUSTOMDATA_COUNT) {
+            throw new IllegalStateException("Reached the maximum count of custom data!");
+        }
+        if(key.length() > MAX_CUSTOMDATA_KEY_LENGTH) {
+            throw new IllegalStateException("The custom data key can't be longer than "
+                + MAX_CUSTOMDATA_KEY_LENGTH +" characters!");
+        }
+        if(key.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
+            throw new IllegalStateException("The custom data value can't be longer than "
+                + MAX_CUSTOMDATA_VALUE_LENGTH +" characters!");
+        }
+        customData.put(key, value);
     }
 
     public boolean start() {
@@ -115,10 +140,6 @@ public class MetricsReporter {
                 if (System.getProperty(PROP_CURR).equals(plugin.getName())) {
                     scheduler.runTaskAsynchronously(plugin, new ServerReportTask());
                 }
-
-                // Schedule plugin update task
-                // TODO: schedule only if there are dynamic graphs data
-                scheduler.runTaskTimerAsynchronously(plugin, new PluginUpdateTask(), 0, UPDATE_DELAY);
 
                 // Schedule server update task
                 scheduler.runTaskTimerAsynchronously(plugin, new ServerUpdateTask(), 0, UPDATE_DELAY);
@@ -187,15 +208,24 @@ public class MetricsReporter {
             List<String> softDepend = pluginInfo.getSoftDepend();
 
             NJson json = new NJson()
-                    .put("authKey", authKey)
-                    .put("serverUuid", config.getUuid())
-                    .put("name", name)
-                    .put("version", version)
-                    .put("description", description)
-                    .put("website", website)
-                    .putArray("authors", authors)
-                    .putArray("depend", depend)
-                    .putArray("softDepend", softDepend);
+                .put("authKey", authKey)
+                .put("serverUuid", config.getUuid())
+                .put("name", name)
+                .put("version", version)
+                .put("description", description)
+                .put("website", website)
+                .putArray("authors", authors)
+                .putArray("depend", depend)
+                .putArray("softDepend", softDepend);
+
+            // Custom data
+            List<String> customDataList = new ArrayList<>();
+            for(String key : customData.keySet()) {
+                String value = customData.get(key);
+                customDataList.add(new NJson().put(key, value).toString());
+            }
+
+            json.putArray("customData", customDataList);
 
             // Send the data
             try {
@@ -235,6 +265,7 @@ public class MetricsReporter {
             // Server instance data
             String serverVersion = server.getBukkitVersion();
             String minecraftVersion = server.getVersion();
+            boolean onlineMode = server.getOnlineMode();
             int worldsCount = server.getWorlds().size();
             int pluginsCount = server.getPluginManager().getPlugins().length;
             String defaultGamemode = server.getDefaultGameMode().toString();
@@ -252,6 +283,7 @@ public class MetricsReporter {
                 .put("allocatedRam", Long.toString(allocatedRam))
                 .put("serverVersion", serverVersion)
                 .put("minecraftVersion", minecraftVersion)
+                .put("onlineMode", Boolean.toString(onlineMode))
                 .put("worldsCount", Integer.toString(worldsCount))
                 .put("pluginsCount", Integer.toString(pluginsCount))
                 .put("defaultGamemode", defaultGamemode);
@@ -265,16 +297,6 @@ public class MetricsReporter {
         }
     }
 
-    private class PluginUpdateTask implements Runnable {
-        @Override
-        public void run() {
-            if (!plugin.isEnabled()) {
-                return;
-            }
-            //TODO: everything :P
-        }
-    }
-
     private class ServerUpdateTask implements Runnable {
         @Override
         public void run() {
@@ -284,14 +306,16 @@ public class MetricsReporter {
             if (!System.getProperty(PROP_CURR).equals(plugin.getName())) {
                 return;
             }
-            NJson json = new NJson().put("playerCount", Integer.toString(getOnlinePlayers()));
+            NJson json = new NJson()
+                .put("uuid", config.getUuid())
+                .put("playerCount", Integer.toString(getOnlinePlayers()));
             try {
-                sendJson(API_SERVER_URL, json.toString());
+                sendJson(API_UPDATE_URL, json.toString());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        
+
         private int getOnlinePlayers() {
             int online = -1;
             try {
@@ -367,10 +391,6 @@ public class MetricsReporter {
 
         public NJson() {
             builder = new StringBuilder();
-        }
-
-        public String prepare(String string) {
-            return string.replace("\"", "\"\"");
         }
 
         public NJson put(String key, String value) {
