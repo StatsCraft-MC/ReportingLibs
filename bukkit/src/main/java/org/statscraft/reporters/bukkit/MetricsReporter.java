@@ -39,9 +39,10 @@ public class MetricsReporter {
     // Api
     private static final int API_VERSION = 1;
     private static final String API_BASE_URL = "http://api.statscraft.org/v" + API_VERSION + "/report";
-    private static final String API_PLUGIN_URL = API_BASE_URL + "/plugin";
-    private static final String API_SERVER_URL = API_BASE_URL + "/server";
-    private static final String API_UPDATE_URL = API_BASE_URL + "/update";
+    private static final String API_PLUGIN_URL = API_BASE_URL + "/start/plugin";
+    private static final String API_SERVER_URL = API_BASE_URL + "/start/server";
+    private static final String API_SERVER_UPDATE_URL = API_BASE_URL + "/update/server";
+    private static final String API_PLUGIN_UPDATE_URL = API_BASE_URL + "/update/plugin";
 
     // System properties
     private static final String PROP_PREFIX = "org.statscraft.reporters.bukkit.";
@@ -369,7 +370,7 @@ public class MetricsReporter {
                 .put("uuid", config.getUuid())
                 .put("playerCount", Integer.toString(getOnlinePlayers()));
             try {
-                sendJson(API_UPDATE_URL, json.toString());
+                sendJson(API_SERVER_UPDATE_URL, json.toString());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -398,14 +399,19 @@ public class MetricsReporter {
             Bukkit.getPluginManager().callEvent(new MetricsReportEvent(customData));
 
             // Custom data
-            List<String> customDataList = new ArrayList<>();
-            for (Map.Entry<String, String> entry : customData.entrySet()) {
-                customDataList.add(new NJson().put(entry.getKey(), entry.getValue()).toString());
-            }
-            //make ready for next cycle or just free memory ifdynamic plugin data is disabled
+            NJson json = new NJson()
+                .put("authKey", authKey)
+                .putMap("customData", customData);
+            
+            
+            //make ready for next cycle or just free memory if dynamic plugin data is disabled
             customData.clear();
 
-            //TODO send the data
+            try {
+                sendJson(API_PLUGIN_UPDATE_URL, json.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
