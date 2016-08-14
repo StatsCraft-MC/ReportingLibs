@@ -104,22 +104,23 @@ public class MetricsReporter {
      * @throws IllegalStateException if the plugin has reached the maximum amount of customdata entries
      * @throws IllegalArgumentException if the customdata name or value is invalid
      */
-    public MetricsReporter addCustomData(String key, String value) throws IllegalStateException, IllegalArgumentException {
+    public MetricsReporter addCustomData(String key, Object value) throws IllegalStateException, IllegalArgumentException {
         if (started) {
             throw new IllegalStateException("Can't add custom data when the metrics service is running!");
         }
-        if (customData.size() == MAX_CUSTOMDATA_COUNT) {
+        if (customData.size() > MAX_CUSTOMDATA_COUNT) {
             throw new IllegalStateException("Reached the maximum count of custom data!");
         }
         if (key.length() > MAX_CUSTOMDATA_KEY_LENGTH) {
             throw new IllegalArgumentException("The custom data key can't be longer than "
                 + MAX_CUSTOMDATA_KEY_LENGTH + " characters!");
         }
-        if (key.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
+        String valueStr = String.valueOf(value);
+        if (valueStr.length() > MAX_CUSTOMDATA_VALUE_LENGTH) {
             throw new IllegalArgumentException("The custom data value can't be longer than "
                 + MAX_CUSTOMDATA_VALUE_LENGTH + " characters!");
         }
-        customData.put(key, value);
+        customData.put(key, valueStr);
         return this;
     }
 
