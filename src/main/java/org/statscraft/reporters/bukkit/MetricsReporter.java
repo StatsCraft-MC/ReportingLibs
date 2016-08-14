@@ -204,22 +204,29 @@ public class MetricsReporter {
 
             // Os data
             String osName = System.getProperty("os.name");
+            String osArch = System.getProperty("os.arch");
             String osVersion = System.getProperty("os.version");
-            // System data TODO: i'm not sure this works with non-oracle JVM
-            com.sun.management.OperatingSystemMXBean systemMXBean =
-                    (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-            int coreCount = systemMXBean.getAvailableProcessors();
-            long availableRam = systemMXBean.getTotalPhysicalMemorySize();
+            Runtime runtime = Runtime.getRuntime();
+            int coreCount = runtime.availableProcessors();
+            long availableRam = runtime.totalMemory();
+            long totalRam;
+            try {
+                totalRam = ((com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getTotalPhysicalMemorySize();
+            } catch (Throwable t) {
+                //TODO output error or not?
+                totalRam = -1;
+            }
             // Jvm data
-            String javaArch = System.getProperty("os.version");
             String javaVersion = System.getProperty("java.version");
+            String javaVendor = System.getProperty("java.vendor");
+            String javaVmName = System.getProperty("java.vm.name");
             // Server instance data
             String serverVersion = server.getBukkitVersion();
             String minecraftVersion = server.getVersion();
 
             NJson json = new NJson()
-                    .put("type", "server")
-                    .put("authKey", authKey);
+                .put("type", "server")
+                .put("authKey", authKey);
 
             // Send the data
             try {
