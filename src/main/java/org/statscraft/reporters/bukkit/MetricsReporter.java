@@ -129,12 +129,6 @@ public class MetricsReporter {
         if(response.startsWith("ERR")) {
             throw new IOException(response);
         }
-        if(response.startsWith("7")) {
-            if(response.startsWith("7,")) {
-                throw new IOException(response.substring(2));
-            }
-            throw new IOException(response.substring(1));
-        }
     }
 
     private class PluginReportTask implements Runnable {
