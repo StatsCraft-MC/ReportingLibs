@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.google.common.collect.ImmutableMap;
+
 /**
  * Metrics reporting service class
  * www.statscraft.org
@@ -102,7 +104,7 @@ public class MetricsReporter {
      * @throws IllegalStateException if the plugin has reached the maximum amount of customdata entries
      * @throws IllegalArgumentException if the customdata name or value is invalid
      */
-    public void addCustomData(String key, String value) throws IllegalStateException, IllegalArgumentException {
+    public MetricsReporter addCustomData(String key, String value) throws IllegalStateException, IllegalArgumentException {
         if (started) {
             throw new IllegalStateException("Can't add custom data when the metrics service is running!");
         }
@@ -118,6 +120,31 @@ public class MetricsReporter {
                 + MAX_CUSTOMDATA_VALUE_LENGTH + " characters!");
         }
         customData.put(key, value);
+        return this;
+    }
+
+    /**
+     * Get previously set custom data by key
+     * @param key the key
+     * @return the value set for the given key or {@code null} if there was no value set
+     */
+    public String getCustomData(String key) {
+        return customData.get(key);
+    }
+
+    /**
+     * Removes a key-value pair of custom data
+     * @param key the key of the pair whcih should be removed
+     */
+    public void removeCustomData(String key) {
+        customData.remove(key);
+    }
+
+    /**
+     * @return an immutable map of all custom data 
+     */
+    public Map<String, String> getCustomData() {
+        return ImmutableMap.copyOf(customData);
     }
 
     /**
@@ -128,7 +155,7 @@ public class MetricsReporter {
     public boolean start() {
         // Stop if the metrics service its already running
         if (started) {
-            return true;
+            return true; //TODO should we really return true here?
         }
 
         // Ignore if the plugin is disabled
