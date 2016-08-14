@@ -8,12 +8,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.statscraft.reporters</groupId>
-    <artifactId>reporter-bukkit</artifactId>
+    <artifactId>reporter-parent</artifactId>
     <version>0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <modules>
+        <module>bukkit</module>
+    </modules>
+    <packaging>pom</packaging>
 
-    <name>Reporter-Bukkit</name>
-    <description>StatsCraft bukkit metrics reporter</description>
+    <name>Reporter-Parent</name>
+    <description>StatsCraft metrics reporter for different minecraft-related servers</description>
     <url>http://statscraft.org</url>
     <inceptionYear>2016</inceptionYear>
 
@@ -65,20 +68,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <id>spigotmc-repo</id>
-            <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.bukkit</groupId>
-            <artifactId>bukkit</artifactId>
-            <version>1.10.2-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
 </project>
