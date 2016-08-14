@@ -82,6 +82,7 @@ public class MetricsReporter {
         if (config.isOptOut()) {
             return false;
         }
+
         System.setProperty(PROP_RV_PREFIX + plugin.getName(), Integer.toString(API_VERSION));
         server.getPluginManager().registerEvents(new Listener() {
             @EventHandler
@@ -201,32 +202,38 @@ public class MetricsReporter {
             if (!plugin.isEnabled()) {
                 return;
             }
+            if (!System.getProperty(PROP_CURR).equals(plugin.getName())) {
+                return;
+            }
 
             // Os data
             String osName = System.getProperty("os.name");
             String osArch = System.getProperty("os.arch");
             String osVersion = System.getProperty("os.version");
-            Runtime runtime = Runtime.getRuntime();
-            int coreCount = runtime.availableProcessors();
-            long availableRam = runtime.totalMemory();
-            long totalRam;
-            try {
-                totalRam = ((com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getTotalPhysicalMemorySize();
-            } catch (Throwable t) {
-                //TODO output error or not?
-                totalRam = -1;
-            }
+
             // Jvm data
             String javaVersion = System.getProperty("java.version");
             String javaVendor = System.getProperty("java.vendor");
             String javaVmName = System.getProperty("java.vm.name");
+
+            // Runtime data
+            Runtime runtime = Runtime.getRuntime();
+            int coreCount = runtime.availableProcessors();
+            long availableRam = runtime.totalMemory();
+            long allocatedRam = runtime.maxMemory();
+
             // Server instance data
             String serverVersion = server.getBukkitVersion();
             String minecraftVersion = server.getVersion();
+            int worldsCount = server.getWorlds().size();
+            int pluginCount = server.getPluginManager().getPlugins().length;
+            String defaultGamemode = server.getDefaultGameMode().toString();
 
             NJson json = new NJson()
-                .put("type", "server")
-                .put("authKey", authKey);
+                .put("uuid", config.getUuid())
+                .put("osName", osName)
+                .put("osArch", osArch)
+                .put("osVersion", osVersion);
 
             // Send the data
             try {
@@ -240,6 +247,9 @@ public class MetricsReporter {
     private class PluginUpdateTask implements Runnable {
         @Override
         public void run() {
+            if (!plugin.isEnabled()) {
+                return;
+            }
             //TODO: everything :P
         }
     }
@@ -247,6 +257,9 @@ public class MetricsReporter {
     private class ServerUpdateTask implements Runnable {
         @Override
         public void run() {
+            if (!plugin.isEnabled()) {
+                return;
+            }
             if (!System.getProperty(PROP_CURR).equals(plugin.getName())) {
                 return;
             }
