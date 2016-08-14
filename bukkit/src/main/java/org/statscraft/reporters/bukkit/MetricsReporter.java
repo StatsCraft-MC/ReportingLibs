@@ -23,7 +23,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -191,7 +190,10 @@ public class MetricsReporter {
         return true;
     }
 
-    private void checkNewerVersionOrElectMe() {//go only on if there's no reporter with a newer version
+    /*
+     * Method used to check the newest daemon version
+     */
+    private void checkNewerVersionOrElectMe() {
         for (Plugin pl : server.getPluginManager().getPlugins()) {
             Integer ver = Integer.getInteger(PROP_RV_PREFIX + pl.getName());
             if (pl.isEnabled() && ver != null && ver > API_VERSION) {
@@ -201,12 +203,15 @@ public class MetricsReporter {
         System.setProperty(PROP_CURR, plugin.getName());
     }
 
+    /*
+     * Common method to send the json data to the REST API
+     */
     private void sendJson(String url, String json) throws IOException {
         // Create connection
         final URLConnection connection = new URL(url).openConnection();
         // Prepare data
         final byte[] bytes = json.getBytes();
-        // Connection parameters TODO: use costants?
+        // Connection parameters
         connection.addRequestProperty("User-Agent", "StatsCraft/" + API_VERSION);
         connection.addRequestProperty("Content-Type", "application/json");
         connection.addRequestProperty("Content-Length", Integer.toString(bytes.length));
@@ -231,6 +236,9 @@ public class MetricsReporter {
         }
     }
 
+    /*
+     * Task used to send the plugin related data
+     */
     private class PluginReportTask implements Runnable {
         @Override
         public void run() {
@@ -268,6 +276,9 @@ public class MetricsReporter {
         }
     }
 
+    /*
+     * Task used to send the server related data
+     */
     private class ServerReportTask implements Runnable {
         @Override
         public void run() {
@@ -327,6 +338,9 @@ public class MetricsReporter {
         }
     }
 
+    /*
+     * Task used to send the update data
+     */
     private class ServerUpdateTask implements Runnable {
         @Override
         public void run() {
@@ -346,6 +360,7 @@ public class MetricsReporter {
             }
         }
 
+        // Compatible with 1.7 and 1.8+
         private int getOnlinePlayers() {
             int online = -1;
             try {
@@ -361,6 +376,9 @@ public class MetricsReporter {
         }
     }
 
+    /*
+     * The metrics configuration manager
+     */
     private class MetricsConfig {
         private final File configFile;
         private FileConfiguration config;
@@ -382,6 +400,7 @@ public class MetricsReporter {
                 config.set("uuid", UUID.randomUUID());
                 changes = true;
             }
+            // Validate the UUID string
             try {
                 UUID.fromString(config.getString("uuid"));
             } catch (IllegalArgumentException ignore) {
@@ -416,6 +435,9 @@ public class MetricsReporter {
         }
     }
 
+    /*
+     * Small Json builder
+     */
     private static class NJson {
         private StringBuilder builder;
 
@@ -467,17 +489,13 @@ public class MetricsReporter {
             return b;
         }
 
-        private String array(String... elements) {
-            return array(Arrays.asList(elements));
-        }
-
         private String array(List<String> elements) {
             StringBuilder b = new StringBuilder();
             for (String e : elements) {
                 if (b.length() > 0) {
                     b.append(",");
                 }
-                b.append("\"" + prepare(e) + "\"");
+                b.append("\"").append(prepare(e)).append("\"");
             }
             return "[" + b.toString() + "]";
         }
