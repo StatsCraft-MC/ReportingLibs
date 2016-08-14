@@ -10,10 +10,11 @@
     <groupId>org.statscraft.reporters</groupId>
     <artifactId>reporter-parent</artifactId>
     <version>0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
     <modules>
         <module>bukkit</module>
     </modules>
-    <packaging>pom</packaging>
 
     <name>Reporter-Parent</name>
     <description>StatsCraft metrics reporter for different minecraft-related servers</description>
