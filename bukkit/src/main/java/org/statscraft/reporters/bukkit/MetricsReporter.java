@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -210,10 +211,11 @@ public class MetricsReporter {
      */
     private void sendJson(String url, String json) throws IOException {
         // Create connection
-        final URLConnection connection = new URL(url).openConnection();
+        final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         // Prepare data
         final byte[] bytes = json.getBytes();
         // Connection parameters
+        connection.setRequestMethod("POST");
         connection.addRequestProperty("User-Agent", "StatsCraft/" + API_VERSION);
         connection.addRequestProperty("Content-Type", "application/json");
         connection.addRequestProperty("Content-Length", Integer.toString(bytes.length));
